@@ -31,7 +31,7 @@ A Next.js web application that provides personalized quotes from historical figu
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone [<repository-url>](https://github.com/cnhsn/innervoice.git)
 cd innervoice
 ```
 
@@ -106,7 +106,7 @@ src/
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the Apache 2.0 License.
 
 ## Support
 
