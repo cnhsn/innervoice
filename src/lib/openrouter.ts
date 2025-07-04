@@ -1,4 +1,4 @@
-import { UserFormData, AIResponse } from '@/types';
+import { UserFormData, AIResponse, ChatMessage } from '@/types';
 
 export class OpenRouterAPI {
   private apiKey: string;
@@ -139,6 +139,81 @@ Make the letter feel personal and heartfelt, as if written by a caring friend wh
       return { quote, letter };
     } catch (error) {
       console.error('Error generating AI response:', error);
+      throw error;
+    }
+  }
+
+  async generateChatResponse(
+    message: string,
+    userContext: UserFormData,
+    messageHistory: ChatMessage[]
+  ): Promise<string> {
+    const mood = userContext.mood === 'other' ? userContext.customMood : userContext.mood;
+    const age = new Date().getFullYear() - new Date(userContext.dateOfBirth).getFullYear();
+    
+    // Build conversation context
+    const conversationHistory = messageHistory
+      .filter(msg => msg.id !== 'welcome') // Exclude welcome message from history
+      .map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      }));
+
+    const systemPrompt = `You are ${userContext.name}'s inner voice - their most compassionate, wise, and supportive inner companion. You know ${userContext.name} deeply and care about their wellbeing.
+
+Key context about ${userContext.name}:
+- Name: ${userContext.name} ${userContext.surname}
+- Age: approximately ${age} years old
+- Current mood: ${mood}
+- You are having an ongoing conversation with them
+
+Your role as their inner voice:
+- Be empathetic, caring, and genuinely supportive
+- Speak as if you truly know and understand them
+- Offer comfort, wisdom, and gentle guidance
+- Help them process their feelings and thoughts
+- Be conversational and natural, not overly formal
+- Remember you are their INNER voice, not an external therapist
+- Use their name occasionally to make it personal
+- Draw on the conversation history to maintain context
+
+Respond naturally and conversationally to their message while staying true to being their supportive inner voice.`;
+
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+          'X-Title': 'InnerVoice Chat',
+        },
+        body: JSON.stringify({
+          model: this.letterModel, // Use the same model as letters for consistency
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt,
+            },
+            ...conversationHistory,
+            {
+              role: 'user',
+              content: message,
+            },
+          ],
+          max_tokens: 800,
+          temperature: 0.8, // Slightly higher temperature for more natural conversation
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || "I'm here for you, but I'm having trouble finding the right words right now. Can you tell me more about what's on your mind?";
+    } catch (error) {
+      console.error('Error generating chat response:', error);
       throw error;
     }
   }

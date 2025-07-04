@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { userFormSchema, UserFormData } from '@/lib/validation';
 import { AIResponse } from '@/types';
-import { Loader2, Heart, Quote } from 'lucide-react';
+import { Loader2, Heart, Quote, MessageCircle } from 'lucide-react';
+import ChatWindow from './ChatWindow';
 
 const MOOD_OPTIONS = [
   { value: 'happy', label: 'Happy' },
@@ -25,6 +26,8 @@ export default function UserForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<AIResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [formData, setFormData] = useState<UserFormData | null>(null);
 
   const {
     register,
@@ -42,6 +45,7 @@ export default function UserForm() {
     setIsLoading(true);
     setError(null);
     setResponse(null);
+    setFormData(data); // Store form data for chat functionality
 
     try {
       const res = await fetch('/api/generate', {
@@ -69,7 +73,34 @@ export default function UserForm() {
   const handleNewSubmission = () => {
     setResponse(null);
     setError(null);
+    setFormData(null);
     reset();
+  };
+
+  const handleChatOpen = () => {
+    if (formData) {
+      setIsChatOpen(true);
+    }
+  };
+
+  const handleChatFromForm = () => {
+    const currentFormData = watch(); // Get current form values
+    if (currentFormData.name && currentFormData.surname && currentFormData.dateOfBirth && currentFormData.mood) {
+      const validFormData: UserFormData = {
+        name: currentFormData.name,
+        surname: currentFormData.surname,
+        dateOfBirth: currentFormData.dateOfBirth,
+        mood: currentFormData.mood,
+        customMood: currentFormData.customMood,
+      };
+      setFormData(validFormData);
+      setIsChatOpen(true);
+    }
+  };
+
+  const isFormValidForChat = () => {
+    const currentFormData = watch();
+    return currentFormData.name && currentFormData.surname && currentFormData.dateOfBirth && currentFormData.mood;
   };
 
   if (response) {
@@ -110,7 +141,14 @@ export default function UserForm() {
             </div>
           </div>
 
-          <div className="text-center mt-8">
+          <div className="text-center mt-8 space-y-4">
+            <button
+              onClick={handleChatOpen}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2 mx-auto"
+            >
+              <MessageCircle size={20} />
+              <span>Chat with Your Inner Voice</span>
+            </button>
             <button
               onClick={handleNewSubmission}
               className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -119,6 +157,15 @@ export default function UserForm() {
             </button>
           </div>
         </div>
+
+        {/* Chat Window */}
+        {formData && (
+          <ChatWindow
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+            userContext={formData}
+          />
+        )}
       </div>
     );
   }
@@ -229,10 +276,21 @@ export default function UserForm() {
               </div>
             )}
 
+            {/* Chat Button - Always visible */}
+            <button
+              type="button"
+              onClick={handleChatFromForm}
+              disabled={!isFormValidForChat()}
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 focus:ring-4 focus:ring-indigo-300 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <MessageCircle size={20} />
+              <span>Chat with Your Inner Voice</span>
+            </button>
+
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !isFormValidForChat()}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 focus:ring-4 focus:ring-purple-300 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
@@ -246,6 +304,15 @@ export default function UserForm() {
             </button>
           </form>
         </div>
+        
+        {/* Chat Window */}
+        {formData && (
+          <ChatWindow
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+            userContext={formData}
+          />
+        )}
       </div>
     </div>
   );

@@ -19,3 +19,15 @@ export interface AIResponse {
   quote: Quote;
   letter: Letter;
 }
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
+export interface ChatSession {
+  messages: ChatMessage[];
+  userContext: UserFormData;
+}
