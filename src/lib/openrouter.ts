@@ -55,6 +55,43 @@ export class OpenRouterAPI {
     return baseDelay * Math.pow(2, attempt) + Math.random() * 1000;
   }
 
+  private async makeRequestWithRetry(prompt: string, model: string): Promise<string> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        return await this.makeRequest(prompt, model);
+      } catch (error) {
+        lastError = error as Error;
+        
+        // Don't retry for certain error types
+        if (error instanceof APIAuthenticationError || 
+            error instanceof APIQuotaExceededError) {
+          throw error;
+        }
+        
+        // Don't retry on the last attempt
+        if (attempt === this.maxRetries) {
+          break;
+        }
+        
+        // Calculate delay for exponential backoff
+        let delay = this.calculateRetryDelay(attempt);
+        
+        // For rate limit errors, use the retry-after value if available
+        if (error instanceof APIRateLimitError && error.retryAfter) {
+          delay = error.retryAfter * 1000; // Convert seconds to milliseconds
+        }
+        
+        console.log(`Request failed (attempt ${attempt + 1}/${this.maxRetries + 1}), retrying in ${delay}ms:`, lastError.message);
+        await this.sleep(delay);
+      }
+    }
+    
+    // If we get here, all retries failed
+    throw lastError || new Error('Request failed after all retry attempts');
+  }
+
   private async makeRequest(prompt: string, model: string): Promise<string> {
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
@@ -161,7 +198,7 @@ IMPORTANT: Please respond with ONLY valid JSON in this exact format (no markdown
 
 Make sure the quote is genuine and historically accurate, and that it addresses the person's current mood in a comforting and inspiring way. Ensure the JSON is properly formatted with escaped quotes if needed.`;
 
-    return await this.makeRequest(prompt, this.quoteModel);
+    return await this.makeRequestWithRetry(prompt, this.quoteModel);
   }
 
   async generateLetter(userData: UserFormData, language: string = 'en'): Promise<string> {
@@ -185,7 +222,7 @@ IMPORTANT: Please respond with ONLY valid JSON in this exact format (no markdown
 
 Make the letter feel personal and heartfelt, as if written by a caring friend who truly understands their situation. Ensure the JSON is properly formatted with escaped quotes and newlines if needed.`;
 
-    return await this.makeRequest(prompt, this.letterModel);
+    return await this.makeRequestWithRetry(prompt, this.letterModel);
   }
 
   async generateResponse(userData: UserFormData, language: string = 'en'): Promise<AIResponse> {
@@ -232,6 +269,111 @@ Make the letter feel personal and heartfelt, as if written by a caring friend wh
     }
   }
 
+  private async makeChatRequestWithRetry(
+    message: string,
+    systemPrompt: string,
+    conversationHistory: Array<{role: string, content: string}>,
+    language: string
+  ): Promise<string> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        return await this.makeChatRequest(message, systemPrompt, conversationHistory, language);
+      } catch (error) {
+        lastError = error as Error;
+        
+        // Don't retry for certain error types
+        if (error instanceof APIAuthenticationError || 
+            error instanceof APIQuotaExceededError) {
+          throw error;
+        }
+        
+        // Don't retry on the last attempt
+        if (attempt === this.maxRetries) {
+          break;
+        }
+        
+        // Calculate delay for exponential backoff
+        let delay = this.calculateRetryDelay(attempt);
+        
+        // For rate limit errors, use the retry-after value if available
+        if (error instanceof APIRateLimitError && error.retryAfter) {
+          delay = error.retryAfter * 1000; // Convert seconds to milliseconds
+        }
+        
+        console.log(`Chat request failed (attempt ${attempt + 1}/${this.maxRetries + 1}), retrying in ${delay}ms:`, lastError.message);
+        await this.sleep(delay);
+      }
+    }
+    
+    // If we get here, all retries failed
+    throw lastError || new Error('Chat request failed after all retry attempts');
+  }
+
+  private async makeChatRequest(
+    message: string,
+    systemPrompt: string,
+    conversationHistory: Array<{role: string, content: string}>,
+    language: string
+  ): Promise<string> {
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        'X-Title': 'InnerVoice Chat',
+      },
+      body: JSON.stringify({
+        model: this.letterModel, // Use the same model as letters for consistency
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt,
+          },
+          ...conversationHistory,
+          {
+            role: 'user',
+            content: message,
+          },
+        ],
+        max_tokens: 800,
+        temperature: 0.8, // Slightly higher temperature for more natural conversation
+      }),
+    });
+
+    // Enhanced error handling for chat requests
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      
+      switch (response.status) {
+        case 401:
+          throw new APIAuthenticationError('Invalid API key or authentication failed');
+        case 402:
+          throw new APIQuotaExceededError('API quota exceeded. Please check your OpenRouter account.');
+        case 429:
+          const retryAfter = parseInt(response.headers.get('retry-after') || '60');
+          throw new APIRateLimitError(
+            `Rate limit exceeded. Please try again in ${retryAfter} seconds.`,
+            retryAfter
+          );
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          throw new APIServiceUnavailableError('OpenRouter service is temporarily unavailable. Please try again later.');
+        default:
+          throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}${errorData.error ? ` - ${errorData.error.message || errorData.error}` : ''}`);
+      }
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || (language === 'tr' 
+      ? "Buradayım ve seni dinliyorum, ama şu anda doğru kelimeleri bulmakta zorlanıyorum. Aklından geçenleri bana biraz daha anlatabilir misin?"
+      : "I'm here for you, but I'm having trouble finding the right words right now. Can you tell me more about what's on your mind?");
+  }
+
   async generateChatResponse(
     message: string,
     userContext: UserFormData,
@@ -274,61 +416,7 @@ Your role as their inner voice:
 Respond naturally and conversationally to their message while staying true to being their supportive inner voice.`;
 
     try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-          'X-Title': 'InnerVoice Chat',
-        },
-        body: JSON.stringify({
-          model: this.letterModel, // Use the same model as letters for consistency
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt,
-            },
-            ...conversationHistory,
-            {
-              role: 'user',
-              content: message,
-            },
-          ],
-          max_tokens: 800,
-          temperature: 0.8, // Slightly higher temperature for more natural conversation
-        }),
-      });
-
-      // Enhanced error handling for chat requests
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        
-        switch (response.status) {
-          case 401:
-            throw new APIAuthenticationError('Invalid API key or authentication failed');
-          case 402:
-            throw new APIQuotaExceededError('API quota exceeded. Please check your OpenRouter account.');
-          case 429:
-            const retryAfter = parseInt(response.headers.get('retry-after') || '60');
-            throw new APIRateLimitError(
-              `Rate limit exceeded. Please try again in ${retryAfter} seconds.`,
-              retryAfter
-            );
-          case 500:
-          case 502:
-          case 503:
-          case 504:
-            throw new APIServiceUnavailableError('OpenRouter service is temporarily unavailable. Please try again later.');
-          default:
-            throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}${errorData.error ? ` - ${errorData.error.message || errorData.error}` : ''}`);
-        }
-      }
-
-      const data = await response.json();
-      return data.choices[0]?.message?.content || (language === 'tr' 
-        ? "Buradayım ve seni dinliyorum, ama şu anda doğru kelimeleri bulmakta zorlanıyorum. Aklından geçenleri bana biraz daha anlatabilir misin?"
-        : "I'm here for you, but I'm having trouble finding the right words right now. Can you tell me more about what's on your mind?");
+      return await this.makeChatRequestWithRetry(message, systemPrompt, conversationHistory, language);
     } catch (error) {
       console.error('Error generating chat response:', error);
       throw error;
