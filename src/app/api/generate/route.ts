@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userData = validationResult.data;
+    const language = body.language || 'en'; // Default to English
 
     // Check if API key is configured
     if (!process.env.OPENROUTER_API_KEY) {
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Generate AI response
     const openRouter = new OpenRouterAPI();
-    const aiResponse = await openRouter.generateResponse(userData);
+    const aiResponse = await openRouter.generateResponse(userData, language);
 
     return NextResponse.json(aiResponse);
   } catch (error) {

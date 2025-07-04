@@ -55,31 +55,60 @@ export class OpenRouterAPI {
     try {
       return JSON.parse(cleanedResponse) as Record<string, unknown>;
     } catch (error) {
-      // If JSON parsing fails, try to extract content manually
       console.warn('Failed to parse JSON response:', error);
+      console.warn('Raw response:', responseText);
+      
+      // Try to extract content using regex as fallback
+      try {
+        // Look for quote and author
+        const quoteMatch = cleanedResponse.match(/"quote"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        const authorMatch = cleanedResponse.match(/"author"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        
+        if (quoteMatch && authorMatch) {
+          return {
+            quote: quoteMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n'),
+            author: authorMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n')
+          };
+        }
+        
+        // Look for letter
+        const letterMatch = cleanedResponse.match(/"letter"\s*:\s*"((?:[^"\\]|\\[\s\S])*)"/);
+        if (letterMatch) {
+          return {
+            letter: letterMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n')
+          };
+        }
+      } catch (extractError) {
+        console.warn('Failed to extract content manually:', extractError);
+      }
+      
       return null;
     }
   }
-  async generateQuote(userData: UserFormData): Promise<string> {
+  async generateQuote(userData: UserFormData, language: string = 'en'): Promise<string> {
     const mood = userData.mood === 'other' ? userData.customMood : userData.mood;
-    const prompt = `Generate an inspirational quote from a well-known historical figure that would be appropriate for someone named ${userData.name} ${userData.surname}, who is feeling ${mood}. 
+    const languageInstruction = language === 'tr' 
+      ? 'Please respond in Turkish (Türkçe).' 
+      : 'Please respond in English.';
+    
+    const prompt = `${languageInstruction} Generate an inspirational quote from a well-known historical figure that would be appropriate for someone named ${userData.name} ${userData.surname}, who is feeling ${mood}. 
 
-Please respond in this exact JSON format:
-{
-  "quote": "The actual quote text here",
-  "author": "Name of the historical figure"
-}
+IMPORTANT: Please respond with ONLY valid JSON in this exact format (no markdown, no extra text):
+{"quote": "The actual quote text here", "author": "Name of the historical figure"}
 
-Make sure the quote is genuine and historically accurate, and that it addresses the person's current mood in a comforting and inspiring way.`;
+Make sure the quote is genuine and historically accurate, and that it addresses the person's current mood in a comforting and inspiring way. Ensure the JSON is properly formatted with escaped quotes if needed.`;
 
     return await this.makeRequest(prompt, this.quoteModel);
   }
 
-  async generateLetter(userData: UserFormData): Promise<string> {
+  async generateLetter(userData: UserFormData, language: string = 'en'): Promise<string> {
     const mood = userData.mood === 'other' ? userData.customMood : userData.mood;
     const age = new Date().getFullYear() - new Date(userData.dateOfBirth).getFullYear();
+    const languageInstruction = language === 'tr' 
+      ? 'Please respond in Turkish (Türkçe). Sign the letter as "İç Sesiniz" at the end.' 
+      : 'Please respond in English. Sign the letter as "Your Inner Voice" at the end.';
     
-    const prompt = `Write a personalized, comforting letter for ${userData.name}, who is approximately ${age} years old and is currently feeling ${mood}. 
+    const prompt = `${languageInstruction} Write a personalized, comforting letter for ${userData.name}, who is approximately ${age} years old and is currently feeling ${mood}. 
 
 The letter should be:
 - Warm and empathetic
@@ -87,23 +116,20 @@ The letter should be:
 - Offering genuine comfort and encouragement
 - About 2-3 paragraphs long
 - Written in a caring, supportive tone
-- Add "Your Inner Voice" as the signature/sender name at the end
 
-Please respond in this exact JSON format:
-{
-  "letter": "The complete letter content here"
-}
+IMPORTANT: Please respond with ONLY valid JSON in this exact format (no markdown, no extra text):
+{"letter": "The complete letter content here including proper signature"}
 
-Make the letter feel personal and heartfelt, as if written by a caring friend who truly understands their situation.`;
+Make the letter feel personal and heartfelt, as if written by a caring friend who truly understands their situation. Ensure the JSON is properly formatted with escaped quotes and newlines if needed.`;
 
     return await this.makeRequest(prompt, this.letterModel);
   }
 
-  async generateResponse(userData: UserFormData): Promise<AIResponse> {
+  async generateResponse(userData: UserFormData, language: string = 'en'): Promise<AIResponse> {
     try {
       const [quoteResponse, letterResponse] = await Promise.all([
-        this.generateQuote(userData),
-        this.generateLetter(userData),
+        this.generateQuote(userData, language),
+        this.generateLetter(userData, language),
       ]);
 
       let quote, letter;
@@ -146,10 +172,15 @@ Make the letter feel personal and heartfelt, as if written by a caring friend wh
   async generateChatResponse(
     message: string,
     userContext: UserFormData,
-    messageHistory: ChatMessage[]
+    messageHistory: ChatMessage[],
+    language: string = 'en'
   ): Promise<string> {
     const mood = userContext.mood === 'other' ? userContext.customMood : userContext.mood;
     const age = new Date().getFullYear() - new Date(userContext.dateOfBirth).getFullYear();
+    
+    const languageInstruction = language === 'tr' 
+      ? 'Please respond in Turkish (Türkçe).' 
+      : 'Please respond in English.';
     
     // Build conversation context
     const conversationHistory = messageHistory
@@ -159,7 +190,7 @@ Make the letter feel personal and heartfelt, as if written by a caring friend wh
         content: msg.content
       }));
 
-    const systemPrompt = `You are ${userContext.name}'s inner voice - their most compassionate, wise, and supportive inner companion. You know ${userContext.name} deeply and care about their wellbeing.
+    const systemPrompt = `${languageInstruction} You are ${userContext.name}'s inner voice - their most compassionate, wise, and supportive inner companion. You know ${userContext.name} deeply and care about their wellbeing.
 
 Key context about ${userContext.name}:
 - Name: ${userContext.name} ${userContext.surname}
@@ -211,7 +242,9 @@ Respond naturally and conversationally to their message while staying true to be
       }
 
       const data = await response.json();
-      return data.choices[0]?.message?.content || "I'm here for you, but I'm having trouble finding the right words right now. Can you tell me more about what's on your mind?";
+      return data.choices[0]?.message?.content || (language === 'tr' 
+        ? "Buradayım ve seni dinliyorum, ama şu anda doğru kelimeleri bulmakta zorlanıyorum. Aklından geçenleri bana biraz daha anlatabilir misin?"
+        : "I'm here for you, but I'm having trouble finding the right words right now. Can you tell me more about what's on your mind?");
     } catch (error) {
       console.error('Error generating chat response:', error);
       throw error;

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { UserFormData, ChatMessage } from '@/types';
 import { Send, X, MessageCircle, Loader2 } from 'lucide-react';
+import { useLanguage } from '@/lib/language-context';
 
 interface ChatWindowProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface ChatWindowProps {
 }
 
 export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowProps) {
+  const { t, language } = useLanguage();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -27,15 +29,30 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       // Add welcome message when chat opens
+      const getMoodText = () => {
+        if (userContext.mood === 'other') {
+          return userContext.customMood;
+        }
+        
+        // Map the mood to the correct translation
+        if (language === 'tr') {
+          return t.moods[userContext.mood as keyof typeof t.moods];
+        }
+        
+        return userContext.mood;
+      };
+
       const welcomeMessage: ChatMessage = {
         id: 'welcome',
         role: 'assistant',
-        content: `Hello ${userContext.name}! I'm your Inner Voice, here to listen and support you. I understand you're feeling ${userContext.mood === 'other' ? userContext.customMood : userContext.mood} today. What would you like to talk about?`,
+        content: language === 'tr' 
+          ? `Merhaba ${userContext.name}! Ben senin İç Sesin, seni dinlemek ve desteklemek için buradayım. Bugün ${getMoodText()} hissettiğini anlıyorum. Ne hakkında konuşmak istersin?`
+          : `Hello ${userContext.name}! I'm your Inner Voice, here to listen and support you. I understand you're feeling ${getMoodText()} today. What would you like to talk about?`,
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
     }
-  }, [isOpen, userContext, messages.length]);
+  }, [isOpen, userContext, messages.length, language, t]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -61,6 +78,7 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
           message: inputMessage.trim(),
           userContext,
           messageHistory: messages,
+          language: language,
         }),
       });
 
@@ -83,7 +101,7 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
       const errorMessage: ChatMessage = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: "I'm sorry, I'm having trouble responding right now. Please try again.",
+        content: t.chatErrorMessage,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -112,7 +130,7 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg">
           <div className="flex items-center space-x-2">
             <MessageCircle size={24} />
-            <h2 className="text-lg font-semibold">Chat with Your InnerVoice</h2>
+            <h2 className="text-lg font-semibold">{t.chatTitle}</h2>
           </div>
           <button
             onClick={onClose}
@@ -148,13 +166,12 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
             </div>
           ))}
           {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 text-gray-800 p-3 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="animate-spin" size={16} />
-                  <span>Thinking...</span>
+            <div className="flex justify-start">                <div className="bg-gray-100 text-gray-800 p-3 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="animate-spin" size={16} />
+                    <span>{t.thinking}</span>
+                  </div>
                 </div>
-              </div>
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -167,7 +184,7 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Share what's on your mind..."
+              placeholder={t.chatPlaceholder}
               className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 placeholder-gray-500 bg-white"
               rows={2}
               disabled={isLoading}

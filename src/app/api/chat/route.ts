@@ -3,7 +3,7 @@ import { OpenRouterAPI } from '@/lib/openrouter';
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, userContext, messageHistory } = await request.json();
+    const { message, userContext, messageHistory, language } = await request.json();
 
     // Validate required fields
     if (!message || !userContext) {
@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
     const aiResponse = await openRouter.generateChatResponse(
       message,
       userContext,
-      messageHistory || []
+      messageHistory || [],
+      language || 'en'
     );
 
     return NextResponse.json({ response: aiResponse });

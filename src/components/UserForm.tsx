@@ -3,26 +3,30 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { userFormSchema, UserFormData } from '@/lib/validation';
+import { createUserFormSchema, UserFormData } from '@/lib/validation';
 import { AIResponse } from '@/types';
-import { Loader2, Heart, Quote, MessageCircle } from 'lucide-react';
+import { Loader2, Heart, Quote, MessageCircle, Brain } from 'lucide-react';
 import ChatWindow from './ChatWindow';
-
-const MOOD_OPTIONS = [
-  { value: 'happy', label: 'Happy' },
-  { value: 'sad', label: 'Sad' },
-  { value: 'anxious', label: 'Anxious' },
-  { value: 'stressed', label: 'Stressed' },
-  { value: 'excited', label: 'Excited' },
-  { value: 'confused', label: 'Confused' },
-  { value: 'lonely', label: 'Lonely' },
-  { value: 'grateful', label: 'Grateful' },
-  { value: 'angry', label: 'Angry' },
-  { value: 'hopeful', label: 'Hopeful' },
-  { value: 'other', label: 'Other' },
-];
+import LanguageSwitcher from './LanguageSwitcher';
+import { useLanguage } from '@/lib/language-context';
 
 export default function UserForm() {
+  const { t, language } = useLanguage();
+  
+  const MOOD_OPTIONS = [
+    { value: 'happy', label: t.moods.happy },
+    { value: 'sad', label: t.moods.sad },
+    { value: 'anxious', label: t.moods.anxious },
+    { value: 'stressed', label: t.moods.stressed },
+    { value: 'excited', label: t.moods.excited },
+    { value: 'confused', label: t.moods.confused },
+    { value: 'lonely', label: t.moods.lonely },
+    { value: 'grateful', label: t.moods.grateful },
+    { value: 'angry', label: t.moods.angry },
+    { value: 'hopeful', label: t.moods.hopeful },
+    { value: 'other', label: t.moods.other },
+  ];
+  
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<AIResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +40,7 @@ export default function UserForm() {
     formState: { errors },
     reset,
   } = useForm<UserFormData>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(createUserFormSchema(t)),
   });
 
   const selectedMood = watch('mood');
@@ -53,7 +57,10 @@ export default function UserForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          language: language
+        }),
       });
 
       if (!res.ok) {
@@ -83,33 +90,18 @@ export default function UserForm() {
     }
   };
 
-  const handleChatFromForm = () => {
-    const currentFormData = watch(); // Get current form values
-    if (currentFormData.name && currentFormData.surname && currentFormData.dateOfBirth && currentFormData.mood) {
-      const validFormData: UserFormData = {
-        name: currentFormData.name,
-        surname: currentFormData.surname,
-        dateOfBirth: currentFormData.dateOfBirth,
-        mood: currentFormData.mood,
-        customMood: currentFormData.customMood,
-      };
-      setFormData(validFormData);
-      setIsChatOpen(true);
-    }
-  };
-
-  const isFormValidForChat = () => {
-    const currentFormData = watch();
-    return currentFormData.name && currentFormData.surname && currentFormData.dateOfBirth && currentFormData.mood;
-  };
-
   if (response) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4">
         <div className="max-w-4xl mx-auto">
+          {/* Language Switcher */}
+          <div className="flex justify-end mb-4">
+            <LanguageSwitcher />
+          </div>
+          
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">Your InnerVoice</h1>
-            <p className="text-gray-600">Here&apos;s what we have for you today</p>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">{t.yourInnerVoice}</h1>
+            <p className="text-gray-600">{t.resultsDescription}</p>
           </div>
 
           <div className="space-y-8">
@@ -118,7 +110,7 @@ export default function UserForm() {
               <div className="flex items-start space-x-4">
                 <Quote className="text-purple-500 mt-1 flex-shrink-0" size={24} />
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Inspirational Quote</h2>
+                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">{t.inspirationalQuote}</h2>
                   <blockquote className="text-lg text-gray-700 italic mb-4 leading-relaxed">
                     &ldquo;{response.quote.text}&rdquo;
                   </blockquote>
@@ -132,7 +124,7 @@ export default function UserForm() {
               <div className="flex items-start space-x-4">
                 <Heart className="text-pink-500 mt-1 flex-shrink-0" size={24} />
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">A Letter for You</h2>
+                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">{t.letterForYou}</h2>
                   <div className="text-gray-700 leading-relaxed whitespace-pre-line">
                     {response.letter.content}
                   </div>
@@ -147,13 +139,13 @@ export default function UserForm() {
               className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2 mx-auto"
             >
               <MessageCircle size={20} />
-              <span>Chat with Your InnerVoice</span>
+              <span>{t.chatWithInnerVoice}</span>
             </button>
             <button
               onClick={handleNewSubmission}
               className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
-              Create Another
+              {t.createAnother}
             </button>
           </div>
         </div>
@@ -173,8 +165,14 @@ export default function UserForm() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
+        {/* Language Switcher */}
+        <div className="flex justify-end mb-4">
+          <LanguageSwitcher />
+        </div>
+        
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">InnerVoice</h1>            <p className="text-gray-600">Share a bit about yourself and receive personalized wisdom and comfort</p>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">{t.appTitle}</h1>
+          <p className="text-gray-600">{t.appDescription}</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-8">
@@ -188,14 +186,14 @@ export default function UserForm() {
             {/* Name */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                First Name
+                {t.firstName}
               </label>
               <input
                 {...register('name')}
                 type="text"
                 id="name"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                placeholder="Enter your first name"
+                placeholder={t.enterFirstName}
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
@@ -205,14 +203,14 @@ export default function UserForm() {
             {/* Surname */}
             <div>
               <label htmlFor="surname" className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name
+                {t.lastName}
               </label>
               <input
                 {...register('surname')}
                 type="text"
                 id="surname"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                placeholder="Enter your last name"
+                placeholder={t.enterLastName}
               />
               {errors.surname && (
                 <p className="mt-1 text-sm text-red-600">{errors.surname.message}</p>
@@ -222,7 +220,7 @@ export default function UserForm() {
             {/* Date of Birth */}
             <div>
               <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
-                Date of Birth
+                {t.dateOfBirth}
               </label>
               <input
                 {...register('dateOfBirth')}
@@ -238,14 +236,14 @@ export default function UserForm() {
             {/* Mood */}
             <div>
               <label htmlFor="mood" className="block text-sm font-medium text-gray-700 mb-2">
-                How are you feeling today?
+                {t.mood}
               </label>
               <select
                 {...register('mood')}
                 id="mood"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900"
               >
-                <option value="">Select your mood</option>
+                <option value="">{t.selectMood}</option>
                 {MOOD_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -261,14 +259,14 @@ export default function UserForm() {
             {selectedMood === 'other' && (
               <div>
                 <label htmlFor="customMood" className="block text-sm font-medium text-gray-700 mb-2">
-                  Please describe how you&apos;re feeling
+                  {t.customMoodLabel}
                 </label>
                 <input
                   {...register('customMood')}
                   type="text"
                   id="customMood"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                  placeholder="Describe your current mood"
+                  placeholder={t.customMoodPlaceholder}
                 />
                 {errors.customMood && (
                   <p className="mt-1 text-sm text-red-600">{errors.customMood.message}</p>
@@ -276,30 +274,22 @@ export default function UserForm() {
               </div>
             )}
 
-            {/* Chat Button - Always visible */}
-            <button
-              type="button"
-              onClick={handleChatFromForm}
-              disabled={!isFormValidForChat()}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 focus:ring-4 focus:ring-indigo-300 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <MessageCircle size={20} />
-              <span>Chat with Your InnerVoice</span>
-            </button>
-
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading || !isFormValidForChat()}
+              disabled={isLoading}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 focus:ring-4 focus:ring-purple-300 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center space-x-2">
                   <Loader2 className="animate-spin" size={20} />
-                  <span>Generating your InnerVoice...</span>
+                  <span>{t.generatingInnerVoice}</span>
                 </div>
               ) : (
-                'Generate My InnerVoice'
+                <div className="flex items-center justify-center space-x-2">
+                  <Brain size={20} />
+                  <span>{t.generateInnerVoice}</span>
+                </div>
               )}
             </button>
           </form>
