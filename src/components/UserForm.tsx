@@ -65,7 +65,24 @@ export default function UserForm() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to generate response');
+        
+        // Handle specific API error types with localized messages
+        switch (res.status) {
+          case 429:
+            if (errorData.retryAfter) {
+              const retryMessage = t.retryInSeconds.replace('{seconds}', errorData.retryAfter.toString());
+              throw new Error(`${t.rateLimitError} ${retryMessage}`);
+            }
+            throw new Error(t.rateLimitError);
+          case 402:
+            throw new Error(t.quotaExceededError);
+          case 401:
+            throw new Error(t.authenticationError);
+          case 503:
+            throw new Error(t.serviceUnavailableError);
+          default:
+            throw new Error(errorData.message || errorData.error || t.errorOccurred);
+        }
       }
 
       const aiResponse: AIResponse = await res.json();

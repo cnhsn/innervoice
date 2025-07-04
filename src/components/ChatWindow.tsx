@@ -83,7 +83,32 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        const errorData = await response.json();
+        
+        // Handle specific API error types with localized messages
+        let errorMessage = '';
+        switch (response.status) {
+          case 429:
+            if (errorData.retryAfter) {
+              const retryMessage = t.retryInSeconds.replace('{seconds}', errorData.retryAfter.toString());
+              errorMessage = `${t.rateLimitError} ${retryMessage}`;
+            } else {
+              errorMessage = t.rateLimitError;
+            }
+            break;
+          case 402:
+            errorMessage = t.quotaExceededError;
+            break;
+          case 401:
+            errorMessage = t.authenticationError;
+            break;
+          case 503:
+            errorMessage = t.serviceUnavailableError;
+            break;
+          default:
+            errorMessage = errorData.message || errorData.error || t.chatErrorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       const { response: aiResponse } = await response.json();

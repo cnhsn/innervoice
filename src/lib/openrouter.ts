@@ -1,16 +1,58 @@
 import { UserFormData, AIResponse, ChatMessage } from '@/types';
 
+// Custom error types for better error handling
+export class APIRateLimitError extends Error {
+  constructor(message: string, public retryAfter?: number) {
+    super(message);
+    this.name = 'APIRateLimitError';
+  }
+}
+
+export class APIQuotaExceededError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'APIQuotaExceededError';
+  }
+}
+
+export class APIAuthenticationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'APIAuthenticationError';
+  }
+}
+
+export class APIServiceUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'APIServiceUnavailableError';
+  }
+}
+
 export class OpenRouterAPI {
   private apiKey: string;
   private baseUrl: string;
   private quoteModel: string;
   private letterModel: string;
+  private maxRetries: number;
+  private baseDelay: number;
 
   constructor() {
     this.apiKey = process.env.OPENROUTER_API_KEY || '';
     this.baseUrl = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
     this.quoteModel = process.env.OPENROUTER_MODEL_QUOTE || 'anthropic/claude-3-haiku:beta';
     this.letterModel = process.env.OPENROUTER_MODEL_LETTER || 'anthropic/claude-3-haiku:beta';
+    this.maxRetries = 3; // Maximum number of retry attempts
+    this.baseDelay = 1000; // Base delay in milliseconds (1 second)
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private calculateRetryDelay(attempt: number, baseDelay: number = this.baseDelay): number {
+    // Exponential backoff with jitter: baseDelay * 2^attempt + random(0, 1000)
+    return baseDelay * Math.pow(2, attempt) + Math.random() * 1000;
   }
 
   private async makeRequest(prompt: string, model: string): Promise<string> {
@@ -35,8 +77,29 @@ export class OpenRouterAPI {
       }),
     });
 
+    // Enhanced error handling for different HTTP status codes
     if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      
+      switch (response.status) {
+        case 401:
+          throw new APIAuthenticationError('Invalid API key or authentication failed');
+        case 402:
+          throw new APIQuotaExceededError('API quota exceeded. Please check your OpenRouter account.');
+        case 429:
+          const retryAfter = parseInt(response.headers.get('retry-after') || '60');
+          throw new APIRateLimitError(
+            `Rate limit exceeded. Please try again in ${retryAfter} seconds.`,
+            retryAfter
+          );
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          throw new APIServiceUnavailableError('OpenRouter service is temporarily unavailable. Please try again later.');
+        default:
+          throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}${errorData.error ? ` - ${errorData.error.message || errorData.error}` : ''}`);
+      }
     }
 
     const data = await response.json();
@@ -237,8 +300,29 @@ Respond naturally and conversationally to their message while staying true to be
         }),
       });
 
+      // Enhanced error handling for chat requests
       if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        
+        switch (response.status) {
+          case 401:
+            throw new APIAuthenticationError('Invalid API key or authentication failed');
+          case 402:
+            throw new APIQuotaExceededError('API quota exceeded. Please check your OpenRouter account.');
+          case 429:
+            const retryAfter = parseInt(response.headers.get('retry-after') || '60');
+            throw new APIRateLimitError(
+              `Rate limit exceeded. Please try again in ${retryAfter} seconds.`,
+              retryAfter
+            );
+          case 500:
+          case 502:
+          case 503:
+          case 504:
+            throw new APIServiceUnavailableError('OpenRouter service is temporarily unavailable. Please try again later.');
+          default:
+            throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}${errorData.error ? ` - ${errorData.error.message || errorData.error}` : ''}`);
+        }
       }
 
       const data = await response.json();

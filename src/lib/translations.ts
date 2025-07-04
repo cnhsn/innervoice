@@ -54,6 +54,13 @@ export interface Translations {
   errorOccurred: string;
   chatErrorMessage: string;
   
+  // Specific API Error Messages
+  rateLimitError: string;
+  quotaExceededError: string;
+  authenticationError: string;
+  serviceUnavailableError: string;
+  retryInSeconds: string;
+  
   // Validation Messages
   nameRequired: string;
   surnameRequired: string;
@@ -117,6 +124,13 @@ export const translations: Record<Language, Translations> = {
     errorOccurred: 'An unexpected error occurred',
     chatErrorMessage: 'I\'m sorry, I\'m having trouble responding right now. Please try again.',
     
+    // Specific API Error Messages
+    rateLimitError: 'Rate limit exceeded. Please wait a moment before trying again.',
+    quotaExceededError: 'API quota exceeded. Please check your account or try again later.',
+    authenticationError: 'Authentication failed. Please check the configuration.',
+    serviceUnavailableError: 'Service is temporarily unavailable. Please try again later.',
+    retryInSeconds: 'Please try again in {seconds} seconds.',
+    
     // Validation Messages
     nameRequired: 'First name is required',
     surnameRequired: 'Last name is required',
@@ -178,6 +192,13 @@ export const translations: Record<Language, Translations> = {
     generatingInnerVoice: 'İç Sesiniz oluşturuluyor...',
     errorOccurred: 'Beklenmeyen bir hata oluştu',
     chatErrorMessage: 'Üzgünüm, şu anda yanıt vermekte zorlanıyorum. Lütfen tekrar deneyin.',
+    
+    // Specific API Error Messages
+    rateLimitError: 'İstek sınırı aşıldı. Lütfen bir süre bekledikten sonra tekrar deneyin.',
+    quotaExceededError: 'API kotası aşıldı. Lütfen hesabınızı kontrol edin veya daha sonra tekrar deneyin.',
+    authenticationError: 'Kimlik doğrulama başarısız. Lütfen yapılandırmayı kontrol edin.',
+    serviceUnavailableError: 'Hizmet geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.',
+    retryInSeconds: 'Lütfen {seconds} saniye sonra tekrar deneyin.',
     
     // Validation Messages
     nameRequired: 'Ad gereklidir',
