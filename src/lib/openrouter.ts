@@ -87,6 +87,7 @@ The letter should be:
 - Offering genuine comfort and encouragement
 - About 2-3 paragraphs long
 - Written in a caring, supportive tone
+- Add "Your Inner Voice" as the signature/sender name at the end
 
 Please respond in this exact JSON format:
 {
