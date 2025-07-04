@@ -112,7 +112,7 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg">
           <div className="flex items-center space-x-2">
             <MessageCircle size={24} />
-            <h2 className="text-lg font-semibold">Chat with Your Inner Voice</h2>
+            <h2 className="text-lg font-semibold">Chat with Your InnerVoice</h2>
           </div>
           <button
             onClick={onClose}

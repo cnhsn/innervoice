@@ -147,7 +147,7 @@ export default function UserForm() {
               className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2 mx-auto"
             >
               <MessageCircle size={20} />
-              <span>Chat with Your Inner Voice</span>
+              <span>Chat with Your InnerVoice</span>
             </button>
             <button
               onClick={handleNewSubmission}
@@ -284,7 +284,7 @@ export default function UserForm() {
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 focus:ring-4 focus:ring-indigo-300 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <MessageCircle size={20} />
-              <span>Chat with Your Inner Voice</span>
+              <span>Chat with Your InnerVoice</span>
             </button>
 
             {/* Submit Button */}
