@@ -150,9 +150,9 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
       <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 via-pink-600/80 to-indigo-600/80 backdrop-blur-sm animate-gradient-xy"></div>
       
       <div className="relative flex items-center justify-center min-h-full">
-        <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl h-[600px] flex flex-col">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl h-[600px] flex flex-col">
           {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg">
           <div className="flex items-center space-x-2">
             <MessageCircle size={24} />
             <h2 className="text-lg font-semibold">{t.chatTitle}</h2>
@@ -176,13 +176,13 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
                 className={`max-w-[80%] p-3 rounded-lg ${
                   message.role === 'user'
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                    : 'bg-gray-100 text-gray-800'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                 }`}
               >
                 <p className="whitespace-pre-wrap">{message.content}</p>
                 <p
                   className={`text-xs mt-1 ${
-                    message.role === 'user' ? 'text-purple-100' : 'text-gray-500'
+                    message.role === 'user' ? 'text-purple-100' : 'text-gray-500 dark:text-gray-400'
                   }`}
                 >
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -191,7 +191,7 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
             </div>
           ))}
           {isLoading && (
-            <div className="flex justify-start">                <div className="bg-gray-100 text-gray-800 p-3 rounded-lg">
+            <div className="flex justify-start">                <div className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-3 rounded-lg">
                   <div className="flex items-center space-x-2">
                     <Loader2 className="animate-spin" size={16} />
                     <span>{t.thinking}</span>
@@ -203,14 +203,14 @@ export default function ChatWindow({ isOpen, onClose, userContext }: ChatWindowP
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-600">
           <div className="flex space-x-2">
             <textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={t.chatPlaceholder}
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 placeholder-gray-500 bg-white"
+              className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700"
               rows={2}
               disabled={isLoading}
             />

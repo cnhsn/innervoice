@@ -8,6 +8,7 @@ import { AIResponse } from '@/types';
 import { Loader2, Heart, Quote, MessageCircle, Brain } from 'lucide-react';
 import ChatWindow from './ChatWindow';
 import LanguageSwitcher from './LanguageSwitcher';
+import ThemeSwitcher from './ThemeSwitcher';
 import { useLanguage } from '@/lib/language-context';
 
 export default function UserForm() {
@@ -109,40 +110,41 @@ export default function UserForm() {
 
   if (response) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 py-12 px-4">
         <div className="max-w-4xl mx-auto">
-          {/* Language Switcher */}
-          <div className="flex justify-end mb-4">
+          {/* Language and Theme Switchers */}
+          <div className="flex justify-end gap-2 mb-4">
+            <ThemeSwitcher />
             <LanguageSwitcher />
           </div>
           
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">{t.yourInnerVoice}</h1>
-            <p className="text-gray-600">{t.resultsDescription}</p>
+            <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">{t.yourInnerVoice}</h1>
+            <p className="text-gray-600 dark:text-gray-300">{t.resultsDescription}</p>
           </div>
 
           <div className="space-y-8">
             {/* Quote Section */}
-            <div className="bg-white rounded-lg shadow-lg p-8 border-l-4 border-purple-500">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border-l-4 border-purple-500">
               <div className="flex items-start space-x-4">
                 <Quote className="text-purple-500 mt-1 flex-shrink-0" size={24} />
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">{t.inspirationalQuote}</h2>
-                  <blockquote className="text-lg text-gray-700 italic mb-4 leading-relaxed">
+                  <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">{t.inspirationalQuote}</h2>
+                  <blockquote className="text-lg text-gray-700 dark:text-gray-300 italic mb-4 leading-relaxed">
                     &ldquo;{response.quote.text}&rdquo;
                   </blockquote>
-                  <cite className="text-purple-600 font-medium">— {response.quote.author}</cite>
+                  <cite className="text-purple-600 dark:text-purple-400 font-medium">— {response.quote.author}</cite>
                 </div>
               </div>
             </div>
 
             {/* Letter Section */}
-            <div className="bg-white rounded-lg shadow-lg p-8 border-l-4 border-pink-500">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border-l-4 border-pink-500">
               <div className="flex items-start space-x-4">
                 <Heart className="text-pink-500 mt-1 flex-shrink-0" size={24} />
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">{t.letterForYou}</h2>
-                  <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                  <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">{t.letterForYou}</h2>
+                  <div className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
                     {response.letter.content}
                   </div>
                 </div>
@@ -180,19 +182,20 @@ export default function UserForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Language Switcher */}
-        <div className="flex justify-end mb-4">
+        {/* Language and Theme Switchers */}
+        <div className="flex justify-end gap-2 mb-4">
+          <ThemeSwitcher />
           <LanguageSwitcher />
         </div>
         
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">{t.appTitle}</h1>
-          <p className="text-gray-600">{t.appDescription}</p>
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">{t.appTitle}</h1>
+          <p className="text-gray-600 dark:text-gray-300">{t.appDescription}</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600">{error}</p>
@@ -202,14 +205,14 @@ export default function UserForm() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t.firstName}
               </label>
               <input
                 {...register('name')}
                 type="text"
                 id="name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-300"
                 placeholder={t.enterFirstName}
               />
               {errors.name && (
@@ -219,14 +222,14 @@ export default function UserForm() {
 
             {/* Surname */}
             <div>
-              <label htmlFor="surname" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="surname" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t.lastName}
               </label>
               <input
                 {...register('surname')}
                 type="text"
                 id="surname"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-300"
                 placeholder={t.enterLastName}
               />
               {errors.surname && (
@@ -236,14 +239,14 @@ export default function UserForm() {
 
             {/* Date of Birth */}
             <div>
-              <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t.dateOfBirth}
               </label>
               <input
                 {...register('dateOfBirth')}
                 type="date"
                 id="dateOfBirth"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white dark:bg-gray-700"
               />
               {errors.dateOfBirth && (
                 <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth.message}</p>
@@ -252,13 +255,13 @@ export default function UserForm() {
 
             {/* Mood */}
             <div>
-              <label htmlFor="mood" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="mood" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t.mood}
               </label>
               <select
                 {...register('mood')}
                 id="mood"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white dark:bg-gray-700"
               >
                 <option value="">{t.selectMood}</option>
                 {MOOD_OPTIONS.map((option) => (
@@ -275,14 +278,14 @@ export default function UserForm() {
             {/* Custom Mood */}
             {selectedMood === 'other' && (
               <div>
-                <label htmlFor="customMood" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="customMood" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t.customMoodLabel}
                 </label>
                 <input
                   {...register('customMood')}
                   type="text"
                   id="customMood"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-300"
                   placeholder={t.customMoodPlaceholder}
                 />
                 {errors.customMood && (

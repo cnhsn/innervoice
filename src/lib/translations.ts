@@ -49,6 +49,10 @@ export interface Translations {
   chatPlaceholder: string;
   thinking: string;
   
+  // Theme
+  lightMode: string;
+  darkMode: string;
+  
   // Loading and Error Messages
   generatingInnerVoice: string;
   errorOccurred: string;
@@ -119,6 +123,10 @@ export const translations: Record<Language, Translations> = {
     chatPlaceholder: 'Share what\'s on your mind...',
     thinking: 'Thinking...',
     
+    // Theme
+    lightMode: 'Light Mode',
+    darkMode: 'Dark Mode',
+    
     // Loading and Error Messages
     generatingInnerVoice: 'Generating your InnerVoice...',
     errorOccurred: 'An unexpected error occurred',
@@ -187,6 +195,10 @@ export const translations: Record<Language, Translations> = {
     chatTitle: 'İç Sesinizle Sohbet Edin',
     chatPlaceholder: 'Aklınızdan geçenleri paylaşın...',
     thinking: 'Düşünüyor...',
+    
+    // Theme
+    lightMode: 'Açık Mod',
+    darkMode: 'Koyu Mod',
     
     // Loading and Error Messages
     generatingInnerVoice: 'İç Sesiniz oluşturuluyor...',
