@@ -29,7 +29,7 @@ This file tracks the ongoing development tasks and future enhancements for the I
 ## 🚀 Medium Priority Features
 
 ### 🎨 UI/UX Enhancements
-- [ ] Add dark/light theme toggle
+- [x] Add dark/light theme toggle
 - [ ] Implement custom theme colors based on mood
 - [ ] Add animations for better user engagement
 - [ ] Create onboarding tutorial for new users
